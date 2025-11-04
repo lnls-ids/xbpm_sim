@@ -6,7 +6,7 @@ import numpy as np
 class BeamPosition():
     """Beam's position by different methods, given the flux on each blade."""
     def __init__(self, bladescoordinates, gprm):
-        # def __init__(self, intervals, boxsize=(10, 10), theta=0):
+        # def __init__(self, intervals, windowsize=(10, 10), theta=0):
         """Initialize general parameters.
 
         Args:
@@ -17,7 +17,7 @@ class BeamPosition():
         """
         # self.intervals = intervals
         self.bladescoordinates = bladescoordinates
-        self.boxsize = gprm['boxsize']
+        self.windowsize = gprm['windowsize']
         self.pixelsize = gprm['pixelsize']
         self.nbins = gprm['nbins']
         self.theta = gprm['theta']
@@ -45,8 +45,8 @@ class BeamPosition():
         ivert = norm * ((self.flux[2] + self.flux[3]) -
                         (self.flux[0] + self.flux[1]))
         # Normalize to box size.
-        self.xppos = ihoriz * 0.5 * self.boxsize[0]
-        self.yppos = ivert * 0.5 * self.boxsize[1]
+        self.xppos = ihoriz * 0.5 * self.windowsize[0]
+        self.yppos = ivert * 0.5 * self.windowsize[1]
         return self.xppos, self.yppos
 
     def cross_difference(self):
@@ -55,8 +55,8 @@ class BeamPosition():
                  (self.flux[2] + self.flux[0]))
         to_bi = ((self.flux[3] - self.flux[1]) /
                  (self.flux[3] + self.flux[1]))
-        hpos = (ti_bo - to_bi) * 0.5 * self.boxsize[0]
-        vpos = (ti_bo + to_bi) * 0.5 * self.boxsize[1]
+        hpos = (ti_bo - to_bi) * 0.5 * self.windowsize[0]
+        vpos = (ti_bo + to_bi) * 0.5 * self.windowsize[1]
         return hpos, vpos
 
     #

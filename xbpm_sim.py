@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/bin/env python3
 # -*- coding: utf-8 -*-
 
 """X-ray Beam Position Monitor (XBPM) simulation.
@@ -13,10 +13,10 @@ where
      -h : this help message
      -i : interactive, the user can move the beam
           up/down, left/right, using the keyboard arrows.
-     -p <paramter file> : the file which defines the parameters of the
+     -p <parameter file>    : the file which defines the parameters of the
           simulation, as the number of random points in the beam, its shape,
           the format of blades and their geometry etc.
-    -d <distribution file> : import an externally generated distribution.
+     -d <distribution file> : import an externally generated distribution.
 
 
 The default is non-interactive, meaning a sweep is made over the
@@ -35,7 +35,7 @@ pixelsize : the length resolution of the system;
 
  - Blades' geometry.
 
-boxsize [(float), (float)] : size of the area where blades are defined
+windowsize [(float), (float)] : size of the area where blades are defined
       (related to the Cu mask);
 
 bladelength, bladethickness (float): blade dimensions, length and thickness;
@@ -156,9 +156,9 @@ def histogram_parameters_set(gprm, mean, cov):
             "cov": cov,
             "nsample": gprm["nsample"],
             "NsampRing": gprm["nsample"] / 5,
-            "meanradius": min(gprm["boxsize"]) / 2,
-            "sigmaradius": min(gprm["boxsize"]) / 10,
-            # 'sigmaradius' : max(cov[0,0], cov[1,1]) * min(gprm['boxsize']),
+            "meanradius": min(gprm["windowsize"]) / 2,
+            "sigmaradius": min(gprm["windowsize"]) / 10,
+            # 'sigmaradius' : max(cov[0,0], cov[1,1]) * min(gprm['windowsize']),
         }
         # If not the first gaussian.
         if ng > 0:
@@ -267,7 +267,7 @@ def histogram_ring(gprm, mradius, sradius, center):
 
     # Classify data as a histogram.
     dx, dy = gprm["PixelSize"], gprm["PixelSize"]
-    hbs, vbs = 0.5 * gprm['boxsize'][0], 0.5 * gprm['boxsize'][1]
+    hbs, vbs = 0.5 * gprm['windowsize'][0], 0.5 * gprm['windowsize'][1]
     hedges = np.arange(-hbs, hbs + dx, dx)
     vedges = np.arange(-vbs, vbs + dy, dy)
     h2d, _, _ = np.histogram2d(xpos, ypos, bins=[hedges, vedges])
@@ -302,7 +302,7 @@ def gaussian_2d_analytic(gprm, ng):
     Args:
         gprm (dict) : parameters of the simulation, including the mean
         and the covariance matrix of the gaussian distribution, given by
-        the keys 'boxsize' (xy-domain), 'pixelsize' (resolution),
+        the keys 'windowsize' (xy-domain), 'pixelsize' (resolution),
         'mean' and 'cov'.
         ng (int) : index of ng-th gaussian (there might be superposition of
             gaussians).
@@ -310,10 +310,10 @@ def gaussian_2d_analytic(gprm, ng):
     Returns:
         gauss_xy (numpy array) : the 2d gaussian distribution.
     """
-    boxsize = gprm['boxsize']
+    windowsize = gprm['windowsize']
     pixelsize = gprm['pixelsize']
-    nbinsx, nbinsy = int(boxsize[0] / pixelsize), int(boxsize[1] / pixelsize)
-    sizex, sizey = boxsize / 2
+    nbinsx, nbinsy = int(windowsize[0] / pixelsize), int(windowsize[1] / pixelsize)
+    sizex, sizey = windowsize / 2
     xlin = np.linspace(-sizex, sizex, nbinsx)
     ylin = np.linspace(-sizey, sizey, nbinsy)
     hx, hy = np.meshgrid(xlin, ylin)
@@ -351,8 +351,8 @@ def gaussian_2d_samples(gprm, idx):
         xedges, yedges: the edges of the distribution.
     """
     vnb, hnb = gprm["nbins"]
-    vlims = [0.5 * -gprm["boxsize"][1], 0.5 * gprm["boxsize"][1]]
-    hlims = [0.5 * -gprm["boxsize"][0], 0.5 * gprm["boxsize"][0]]
+    vlims = [0.5 * -gprm["windowsize"][1], 0.5 * gprm["windowsize"][1]]
+    hlims = [0.5 * -gprm["windowsize"][0], 0.5 * gprm["windowsize"][0]]
     gh = gprm[idx]
     # data = np.random.multivariate_normal(gh["mean"], gh["cov"],
     #                                      size=gh["nsample"])
@@ -492,7 +492,7 @@ def image_show(count, beamhist, maskarray, bmp, gprm,  # noqa: ARG001
     histogram_update(beamhist, gprm)
     imgbeam = beamhist[0] if gprm["ngauss"] == 1 else sum(beamhist)
 
-    xt, yt = 0.5 * gprm["boxsize"][0], 0.5 * gprm["boxsize"][1]
+    xt, yt = 0.5 * gprm["windowsize"][0], 0.5 * gprm["windowsize"][1]
     extent = (-xt, xt, -yt, yt)
     axbeam.clear()
     imbeam = axbeam.imshow(imgbeam, origin="lower", extent=extent)
@@ -685,7 +685,7 @@ def parameters_read(parfilename, distributionfile):
             parval = line.split()
             key, val = parval[0], parval[1:]
 
-            if key in ['boxsize', 'mean', 'sweepinterval']:
+            if key in ['windowsize', 'mean', 'sweepinterval']:
                 v1 = float(re.sub(r'[\[\,]', '', val[0]))
                 v2 = float(re.sub(r'[\]\,]', '', val[1]))
                 prm[key] = np.array([v1, v2])
@@ -700,8 +700,8 @@ def parameters_read(parfilename, distributionfile):
                 prm[key] = float(val[0])
 
     # Number of histogram bins (number of pixels in image).
-    prm['nbins'] = [int(prm['boxsize'][1] / prm['pixelsize']),
-                    int(prm['boxsize'][0] / prm['pixelsize'])]
+    prm['nbins'] = [int(prm['windowsize'][1] / prm['pixelsize']),
+                    int(prm['windowsize'][0] / prm['pixelsize'])]
 
     # Set standard mean, covariance matrix and number of samples per frame
     # for each histogram.

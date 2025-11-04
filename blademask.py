@@ -23,7 +23,7 @@ class BladeMask:
     """
     def __init__(self, gprm):
         """Define the main parameters of the mask."""
-        self.boxsize = gprm['boxsize']
+        self.windowsize = gprm['windowsize']
         self.pixelsize = gprm['pixelsize']
         self.nbins = gprm['nbins']
         self.corneroffset = gprm['corneroffset']
@@ -99,8 +99,8 @@ class BladeMask:
             # treat bulk and borders of the blades, except corners.
             for jj, interval in enumerate(intervals):
                 # Define the interval corresponding to current blade. Take the
-                # limits of the box, [0, boxsize[0/1]], into consideration.
-                # xA, xB = max(interval[0], 0), min(interval[1], self.boxsize)
+                # limits of the box, [0, windowsize[0/1]], into consideration.
+                # xA, xB = max(interval[0], 0), min(interval[1], self.windowsize)
                 # # xA, xB = interval[0], interval[1]
 
                 # Horizontal range to be scanned, in pixels coordinates, not
@@ -204,18 +204,18 @@ class BladeMask:
         blades[0] += np.array((dx, dy))
 
         # Bottom, right blade.
-        dx = self.boxsize[0] - blades[1][1][0] - self.corneroffset
+        dx = self.windowsize[0] - blades[1][1][0] - self.corneroffset
         dy = -blades[1][1][1]
         blades[1] += np.array((dx, dy))
 
         # Top, right blade.
-        dx = self.boxsize[0] - blades[2][2][0] - self.corneroffset
-        dy = self.boxsize[1] - blades[2][2][1]
+        dx = self.windowsize[0] - blades[2][2][0] - self.corneroffset
+        dy = self.windowsize[1] - blades[2][2][1]
         blades[2] += np.array((dx, dy))
 
         # Top, left blade.
         dx = -blades[3][3][0] + self.corneroffset
-        dy = self.boxsize[1] - blades[3][3][1]
+        dy = self.windowsize[1] - blades[3][3][1]
         blades[3] += np.array((dx, dy))
 
         return blades
@@ -313,8 +313,8 @@ class BladeMask:
             xc, yc = corner
 
             # Skip if corner lies outside the box array.
-            if (xc < 0 or xc > self.boxsize[0] or
-                yc < 0 or yc > self.boxsize[1]):
+            if (xc < 0 or xc > self.windowsize[0] or
+                yc < 0 or yc > self.windowsize[1]):
                 continue
 
             # Identify pixel (in array) coordinates. It must be inbounds.
