@@ -81,7 +81,7 @@ import getopt
 import re
 import sys
 
-bibdir = "/home/arnaldo.filho/XBPM/src/"
+bibdir = "./"
 sys.path.append(bibdir)
 from positioncalc import BeamPosition as BmP  # type: ignore # noqa: F401, E402
 from blademask import BladeMask               # type: ignore # noqa: E402
