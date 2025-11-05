@@ -16,8 +16,9 @@ where
      -p <parameter file>    : the file which defines the parameters of the
           simulation, as the number of random points in the beam, its shape,
           the format of blades and their geometry etc.
-     -d <distribution file> : import an externally generated distribution.
-
+     -d <distribution file> : import an externally generated distribution
+           in numpy array file format. It allows for X-ray profiles simulated
+           from bend magnets or undulators, or registered from DVF cameras.
 
 The default is non-interactive, meaning a sweep is made over the
 defined window. Length units are in mm; angles, in degrees.
@@ -25,45 +26,48 @@ defined window. Length units are in mm; angles, in degrees.
 The parameters (to be defined in the parameter file) are:
 
 ngauss (int) : number of gaussian distributions to be superimposed.
-     The simulation may emulate distortions in the beam by adding gaussian
-     distributions; the mean and variances of each are randomly defined.
+           Emulate distortions in the beam by adding gaussian distributions;
+           the mean and variances of each are randomly defined.
 
 nsample (int) : number of gaussian random samples (2-d coordinates) to
-      represent the incident 'photons' in each frame;
+           represent the incident 'photons' in each frame;
 
 pixelsize : the length resolution of the system;
 
  - Blades' geometry.
 
 windowsize [(float), (float)] : size of the area where blades are defined
-      (related to the Cu mask);
+           (related to the Cu mask);
 
 bladelength, bladethickness (float): blade dimensions, length and thickness;
 
 corneroffset (float) : distance between blade and box corner (horizontal);
 
-phi (float) : aAzimuthal angle of the blades in the Box;
+phi (float) : azimuthal angle of the blades in the Box;
 
  - Simulation
 
 nsweeps (int) : number equidistant measurements in each direction
-      inside the box;
+           inside the box;
 
 sweepinterval ([(float), (float)]) : interval inside the box for sweeping
-      (a centralized square).
+           (a centralized square).
 
 fwhm_x, fwhm_y (float) : beam width (FWHM);
 
 thetadeg (float) : blade angle upon which photons incide, in deg;
 
 addring (True/False):  should the simulation consider a gaussian 'ring'
-     to be added to the gaussian distributions;
+           to be added to the gaussian distributions;
 
 mean ([(float), (float)]) : the standard mean;
 
 cxy, cyx (float) : crossed covariances.
 
 histupdate (True/False) : do update histogram image while sweeping.
+
+registerflux (True/False) : record the fluxes on the blades and write them to
+           file; usefull for further adjusts in position calculations.
 
 """
 

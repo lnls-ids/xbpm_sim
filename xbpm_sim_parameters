@@ -1,0 +1,71 @@
+# Set general parameters for XBPM simulation.
+# Disctances in mm, angles in degrees when suitable.
+
+# Number of gaussian distributions to be superimposed.
+ngauss 1
+
+# Number of incident 'photons' in each frame.
+nsample 1e8
+
+# Size of the area where blades are defined (related to the Cu mask).
+windowsize [15.8, 11.0]
+
+# The length resolution of the system.
+pixelsize 0.02
+
+# Blade dimensions, length
+bladelength 3.54
+
+# Blade thickness (inside the Box).
+bladethickness 0.25
+
+# Distance between blade and box corner (horizontal).
+corneroffset 1.4
+
+# Azimuthal angle of the blades in the Box.
+phi 45
+
+# Resolution (# pixels in the Box).
+#nbins int(windowsize / pixelsize)
+
+# Number of points in the Box to be measured in one direction.
+nsweeps 20
+
+# Interval for sweeping.
+sweepinterval [-2, 2]
+
+# Beam dimensions (FWHM).
+fwhm_x 6.0
+fwhm_y 2.0
+
+# The blade angle upon which photons incide, in deg.
+thetadeg 8.16
+#theta = thetadeg * np.pi / 180.0
+
+# Kx and Ky correction factors after calibration.
+kx 1.0
+ky 1.0
+
+# Should the simulation consider a gaussian 'ring' to be added
+# to the gaussian distributions.
+addring False
+
+# Set standard mean, covariance matrix and number of samples per frame
+# for each histogram.
+mean [0., 0.]
+
+#fwhm2sigma = 1.0 / np.sqrt(8 * np.log(2))
+#cx, cy = beamfwhm_x * fwhm2sigma, beamfwhm_y * fwhm2sigma
+
+# Crossed covariances.
+cxy 0.
+cyx 0.
+
+# Do update histogram image.
+histupdate False
+
+# Histogram from random samples (True) or analytic calculation (False).
+randomhist False
+
+# Record the fluxes on the blades and write to file.
+registerflux True
