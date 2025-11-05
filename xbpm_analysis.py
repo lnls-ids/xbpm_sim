@@ -16,7 +16,8 @@ where
 """
 
 from copy import deepcopy
-import getopt
+import argparse
+from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 import re
@@ -79,18 +80,19 @@ def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
 
     # Axes parameters.
     for ax in [axall, axcut, axrc]:
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
+        ax.set_xlabel(u"$x$ [mm]")
+        ax.set_ylabel(u"$y$ [mm]")
         ax.grid()
         ax.margins(0.1)
         ax.set_title(title)
         ax.set_aspect("equal")
-    axrc.set_xlabel("real")
-    axrc.set_ylabel("calculated")
+    axrc.set_xlabel("real [mm]")
+    axrc.set_ylabel("calculated [mm]")
     ax.set_title(title + f", cut at line {lr}")
     axrc.legend()
     axrc.margins(0.1)
 
+    fig.tight_layout()
     fig.savefig(f"{title}-grid.png")
     # plt.tight_layout()
     # plt.show()
@@ -125,16 +127,16 @@ def standard_deviation(realx, realy, adjx, adjy, title=""):
     diff2 = (diff_x_2 + diff_y_2) * 0.5
 
     figna, axna = plt.subplots(1)
-    axna.set_xlabel("X")
-    axna.set_ylabel("Y")
-    axna.set_title("inaccuracy")
+    axna.set_xlabel(u"$x$ [mm]")
+    axna.set_ylabel(u"$y$ [mm]")
+    # axna.set_title("inaccuracy")
+    axna.set_title(u"Local standard deviations [$\mu$m]")  # noqa: W605
 
     dcol = (realx[0, 1] - realx[0, 0])
     dlin = (realy[1, 0] - realy[0, 0])
     frcol, tcol = realx[0, 0], realx[0, -1]  # + dc
     frlin, tlin = realy[0, 0], realy[-1, 0]  # + dl
 
-    axna.set_title(u"Local standard deviations ($\mu$m)")  # noqa: W605
     xticks = [f"{x:.2f}" for x in np.arange(frcol, tcol+dcol, dcol)]
     yticks = [f"{x:.2f}" for x in np.arange(frlin, tlin+dlin, dlin)]
     try:
@@ -266,41 +268,87 @@ def xbpm_fit(data, fromto=(7, 14), title="XBPM positions"):
 
 
 def data_read():
-    """Get command line options."""
-    # Default fitting interval.
-    data = list()
+    """Read command line options and files.
 
-    # Read options, if available.
-    try:
-        opts = getopt.getopt(sys.argv[1:], "hi:f:")
-        if len(opts[0]) == 0:
-            raise Exception("No command line arguments given. Aborting.")
-    except Exception as err:
-        print(f" ERROR: {err}")
-        sys.exit(1)
+    This function is intentionally thin: it delegates parsing and file
+    reading to small helpers so the logic is easier to test and maintain.
 
-    fitrange = None
-
-    for opt in opts[0]:
-        if opt[0] == "-h":
-            """Help message."""
-            help("xbpm_analysis")
-            sys.exit(0)
-
-        if opt[0] == "-i":
-            fitrange = int(opt[1])
-
-        elif opt[0] == '-f':
-            files = opt[1].split(',')
-            for file in files:
-                tp = re.search("cross|pair", file)
-                title = "" if tp is None else tp.group()
-                try:
-                    data.append([np.genfromtxt(file), title])
-                except Exception as err:
-                    print(f"ERROR reading file: {err}")
-                    sys.exit(1)
+    Returns:
+        (data, fitrange) where data is a list of FileData objects.
+    """
+    files, fitrange = parse_options()
+    data = read_data_files(files)
     return data, fitrange
+
+
+@dataclass
+class FileData:
+    """Container for a read file and its display title."""
+    array: np.ndarray
+    title: str
+
+
+def parse_options(argv=None):
+    """Parse command line options and return (files, fitrange).
+
+    Uses argparse for clearer help messages and validation. If argv is
+    provided it should be a list of arguments (for testing), otherwise
+    sys.argv[1:] is used.
+    """
+    if argv is None:
+        argv = None  # argparse will default to sys.argv[1:]
+
+    parser = argparse.ArgumentParser(
+        prog="xbpm_analysis",
+        description=(
+            "Analyze XBPM simulation output files and "
+            "compute correction coefficients"
+        ),
+    )
+    parser.add_argument('-f', '--files', required=True,
+                        help='Comma-separated list of files to analyse')
+    parser.add_argument(
+        '-i', '--interval',
+        type=int,
+        default=None,
+        help=(
+            'Interval of fitting in indexes (e.g. for 20 positions, '
+            '-i 3 means from 7 to 13)'
+        ),
+    )
+
+    args = parser.parse_args(argv)
+
+    files = args.files.split(',') if args.files else []
+    fitrange = args.interval
+
+    return files, fitrange
+
+
+def read_data_files(files):
+    """Read the provided files and build the data list.
+
+    Each entry is [numpy_array, title]. Any file read error will print
+    an error and exit, matching previous behavior.
+    """
+    data = []
+    basetitle = "XBPM positions"
+
+    for file in files:
+        tp = re.search("cross|pair", file)
+        if tp is None:
+            title = basetitle
+        else:
+            title = basetitle + ", " + tp.group()
+            if tp.group() == "pair":
+                title += "wise blades"
+        try:
+            data.append(FileData(np.genfromtxt(file), title))
+        except Exception as err:
+            print(f"ERROR reading file: {err}")
+            sys.exit(1)
+
+    return data
 
 
 def flux_plot(data):
@@ -332,7 +380,7 @@ def main():
     data, fitrange = data_read()
 
     # Data square size, in index value.
-    step = int(np.sqrt(data[0][0].shape[0]))
+    step = int(np.sqrt(data[0].array.shape[0]))
 
     # Default value for fitting interval if not provided.
     nx = int(step / 2)
@@ -340,11 +388,11 @@ def main():
         fitrange = int(nx / 4)
     fromto = (nx - fitrange, nx + fitrange + 1)
 
-    for dt, title in data:
-        xbpm_fit(dt, fromto=fromto, title=title)
+    for fd in data:
+        xbpm_fit(fd.array, fromto=fromto, title=fd.title)
 
-    if len(data[0][0]) > 4:
-        flux_plot(data[0][0])
+    if len(data[0].array) > 4:
+        flux_plot(data[0].array)
 
     plt.tight_layout()
     plt.show()
