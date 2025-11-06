@@ -26,7 +26,9 @@ import sys
 
 def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
     """Plot the positions calculated by the XBPM simulation."""
-    fig, (axall, axcut, axrc) = plt.subplots(1, 3, figsize=(18, 5))
+    # Use a slightly smaller figure and manually adjust spacing to
+    # reduce large borders and gaps between axes.
+    fig, (axall, axcut, axrc) = plt.subplots(1, 3, figsize=(15, 4))
 
     # Get real and calculated positions for each direction from 'data'.
     real_x = data[:, 0]
@@ -78,23 +80,27 @@ def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
     axrc.plot(rrs_x[lr, :], adjresh_x[lr, :], 'yo', label="X")
     axrc.plot(rrs_y[:, lr], adjresh_y[:, lr], 'go', label="Y")
 
-    # Axes parameters.
+    # Axes parameters. Use smaller margins to pack plots tighter.
     for ax in [axall, axcut, axrc]:
         ax.set_xlabel(u"$x$ [mm]")
         ax.set_ylabel(u"$y$ [mm]")
         ax.grid()
-        ax.margins(0.1)
-        ax.set_title(title)
+        ax.margins(0.03)
+        ax.set_title(title, fontsize=10)
         ax.set_aspect("equal")
     axrc.set_xlabel("real [mm]")
     axrc.set_ylabel("calculated [mm]")
-    ax.set_title(title + f", cut at line {lr}")
+    axrc.set_title(title + f", cut at line {lr}", fontsize=10)
     axrc.legend()
     axrc.margins(0.1)
+    axcut.set_title(title + ", central region", fontsize=10)
 
-    fig.tight_layout()
-    fig.savefig(f"{title}-grid.png")
-    # plt.tight_layout()
+    # Manually tighten subplot spacing (controls gaps and borders).
+    fig.subplots_adjust(left=0.06, right=0.8, top=0.92, bottom=0.09,
+                        wspace=0.28)
+
+    # Save with a tight bounding box to trim any extra white border.
+    fig.savefig(f"{title}-grid.png", bbox_inches='tight', pad_inches=0.0)
     # plt.show()
 
     return stddevx, stddevy, stddevall
