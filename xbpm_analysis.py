@@ -47,8 +47,8 @@ def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
     adj_y = calc_y * ky + dy
 
     # Plot original and adjusted coordinates.
-    axall.plot(real_x, real_y, 'bo')
-    axall.plot(adj_x, adj_y, 'ro')
+    axall.plot(adj_x, adj_y, 'bo')
+    axall.plot(real_x, real_y, 'r+')
 
     # Reshaping parameter.
     resh = int(np.sqrt(real_x.shape[0]))
@@ -67,8 +67,8 @@ def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
     adjreshsl_x = adjresh_x[fr:to, fr:to]
     adjreshsl_y = adjresh_y[fr:to, fr:to]
     #
-    axcut.plot(rsl_x, rsl_y, 'bo-')
-    axcut.plot(adjreshsl_x, adjreshsl_y, 'ro-')
+    axcut.plot(adjreshsl_x, adjreshsl_y, 'bo-')
+    axcut.plot(rsl_x, rsl_y, 'r+-')
     stddevx, stddevy, stddevall = standard_deviation(rsl_x, rsl_y,
                                                      adjreshsl_x, adjreshsl_y,
                                                      title)
@@ -216,7 +216,7 @@ def correction_coefficients(real, calc, fromto=(0, 10)):
     return kk, delta, cov, chi2
 
 
-def xbpm_fit(data, fromto=(7, 14), title="XBPM positions"):
+def xbpm_fit(data, fromto=(7, 14), title="XBPM_positions"):
     """Calculate the Kx and Ky coefficients to correct XBPM data and plot it.
 
     Args:
@@ -338,16 +338,16 @@ def read_data_files(files):
     an error and exit, matching previous behavior.
     """
     data = []
-    basetitle = "XBPM positions"
+    basetitle = "XBPM_positions"
 
     for file in files:
         tp = re.search("cross|pair", file)
         if tp is None:
             title = basetitle
         else:
-            title = basetitle + ", " + tp.group()
+            title = basetitle + "-" + tp.group()
             if tp.group() == "pair":
-                title += "wise blades"
+                title += "wise_blades"
         try:
             data.append(FileData(np.genfromtxt(file), title))
         except Exception as err:
