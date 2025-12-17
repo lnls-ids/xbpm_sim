@@ -162,7 +162,6 @@ def histogram_parameters_set(gprm, mean, cov):
             "NsampRing": gprm["nsample"] / 5,
             "meanradius": min(gprm["windowsize"]) / 2,
             "sigmaradius": min(gprm["windowsize"]) / 10,
-            # 'sigmaradius' : max(cov[0,0], cov[1,1]) * min(gprm['windowsize']),
         }
         # If not the first gaussian.
         if ng > 0:
@@ -316,7 +315,8 @@ def gaussian_2d_analytic(gprm, ng):
     """
     windowsize = gprm['windowsize']
     pixelsize = gprm['pixelsize']
-    nbinsx, nbinsy = int(windowsize[0] / pixelsize), int(windowsize[1] / pixelsize)
+    nbinsx = int(windowsize[0] / pixelsize)
+    nbinsy = int(windowsize[1] / pixelsize)
     sizex, sizey = windowsize / 2
     xlin = np.linspace(-sizex, sizex, nbinsx)
     ylin = np.linspace(-sizey, sizey, nbinsy)
@@ -455,8 +455,10 @@ def box_values_show(axval, flux, mean, pairpositions,
     )
     axval.tick_params(axis="y", which="both", left=False, right=False,
                       labelleft=False)
-    return axval.text(0.05, 0.95, current_table, fontsize=11,
-                      verticalalignment="top")
+    # Center the table within the axes
+    return axval.text(0.5, 0.95, current_table, fontsize=11,
+                      verticalalignment="top",
+                      horizontalalignment="center")
 
 
 def beam_over_mask(beam, mask):
@@ -499,6 +501,8 @@ def image_show(count, beamhist, maskarray, bmp, gprm,  # noqa: ARG001
     xt, yt = 0.5 * gprm["windowsize"][0], 0.5 * gprm["windowsize"][1]
     extent = (-xt, xt, -yt, yt)
     axbeam.clear()
+    axbeam.set_xlabel(u"$x$ [mm]")
+    axbeam.set_ylabel(u"$y$ [mm]", labelpad=4)
     imbeam = axbeam.imshow(imgbeam, origin="lower", extent=extent)
 
     # Apply the mask on the image created, so only the regions where
@@ -506,6 +510,13 @@ def image_show(count, beamhist, maskarray, bmp, gprm,  # noqa: ARG001
     # measurements.
     imgmasked = beam_over_mask(imgbeam, maskarray)
     axblades.clear()
+    axblades.set_xlabel(u"$x$ [mm]")
+    axblades.set_ylabel(u"$y$ [mm]", labelpad=4)
+
+    # Widen left margin once to avoid y-label clipping.
+    if count == 0:
+        fig = axbeam.get_figure()
+        fig.subplots_adjust(left=0.045)
     imblades = axblades.imshow(imgmasked, origin="lower", extent=extent)
 
     # Measure the flux on the blades, calculate positions and show it.
@@ -799,22 +810,12 @@ def main():
     # Create blades array, a 'mask'.
     blades = BladeMask(gprm)
 
-    # DEBUG
-    # print("\n>>>>> (MAIN) gprm :")
-    # for key, val in gprm.items():
-    #     print(f" {key} = {val}")
-    # print("\n\n")
-
-    # plt.imshow(blades.maskarray)
-    # plt.show()
-    # sys.exit(0)
-    # DEBUG
-
     # Initialize beam position calculation methods.
     bmp = BmP(blades.bladescoordinates, gprm)
 
     # Initialize subplots.
-    fig, (axbeam, axblades, axval) = plt.subplots(1, 3, figsize=(15, 6))
+    fig, (axbeam, axblades, axval) = plt.subplots(1, 3, figsize=(15, 5))
+    fig.tight_layout(pad=2.0)
 
     # Listen to the keyboard arrows (interactive motion of the beam mean).
     if interactive:
