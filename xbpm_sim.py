@@ -678,7 +678,7 @@ def sweep_make(fig, beamhist, imageshow, blades, bmp, gprm):
         plt.pause(0.1)
 
 
-def parameters_read(parfilename, distributionfile):
+def parameters_read(parfilename: str, distributionfile: str = None) -> tuple:
     """Read simulation parameters from file.
 
     Args:
@@ -704,6 +704,9 @@ def parameters_read(parfilename, distributionfile):
                 v1 = float(re.sub(r'[\[\,]', '', val[0]))
                 v2 = float(re.sub(r'[\]\,]', '', val[1]))
                 prm[key] = np.array([v1, v2])
+            if key in ['gains']:
+                gainstr  = re.sub(r'[\[\]]', '', val).split(',')
+                prm[key] = np.array([float(g) for g in gainstr])
             elif key in ['addring', 'histupdate',
                          'randomhist', 'registerflux']:
                 prm[key] = False if val[0] == 'False' else True
@@ -717,6 +720,10 @@ def parameters_read(parfilename, distributionfile):
     # Number of histogram bins (number of pixels in image).
     prm['nbins'] = [int(prm['windowsize'][1] / prm['pixelsize']),
                     int(prm['windowsize'][0] / prm['pixelsize'])]
+
+    # Set gains to 1 if not defined.
+    if 'gains' not in prm:
+        prm['gains'] = np.array([1.0, 1.0, 1.0, 1.0])
 
     # Set standard mean, covariance matrix and number of samples per frame
     # for each histogram.

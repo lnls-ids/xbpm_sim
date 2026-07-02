@@ -100,7 +100,8 @@ def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
                         wspace=0.28)
 
     # Save with a tight bounding box to trim any extra white border.
-    fig.savefig(f"{title}-grid.png", bbox_inches='tight', pad_inches=0.0)
+    fig.savefig(f"{title}-grid.png", bbox_inches='tight',
+                pad_inches=0.0, dpi=300)
     # plt.show()
 
     return stddevx, stddevy, stddevall
@@ -156,7 +157,8 @@ def standard_deviation(realx, realy, adjx, adjy, title=""):
                        cmap="viridis", origin="lower")
     figna.colorbar(imna)
     figna.tight_layout()
-    figna.savefig(f"{title}-inaccuracy.png")
+    figna.savefig(f"{title}-inaccuracy.png", bbox_inches='tight',
+                  pad_inches=0.0, dpi=300)
 
     varx = np.sum(diff_x_2) / nsite
     vary = np.sum(diff_y_2) / nsite

@@ -61,6 +61,9 @@ mean [0., 0.]
 cxy 0.
 cyx 0.
 
+# Blade gains. A four-vector in order [TO, TI, BI, BO].
+gains [1, 1, 1, 1]
+
 # Do update histogram image.
 histupdate False
 
