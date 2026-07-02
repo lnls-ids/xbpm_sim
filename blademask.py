@@ -158,12 +158,14 @@ class BladeMask:
         # of the blade is: length in vertical, thickness in horziontal,
         # geometric center at zero. The blade is thereafter rotated and
         # shifted to its final location.
-        halfthickb = 0.5 * self.bladethickness
+        halfthickb  = 0.5 * self.bladethickness
         halfheightb = 0.5 * self.bladelength
-        bladecoordinates = [[-halfthickb, -halfheightb],
-                            [halfthickb, -halfheightb],
-                            [halfthickb, halfheightb],
-                            [-halfthickb, halfheightb]]
+        bladecoordinates = [
+            [-halfthickb, -halfheightb],
+            [ halfthickb, -halfheightb],
+            [ halfthickb,  halfheightb],
+            [-halfthickb,  halfheightb]
+            ]
 
         # List of all four blades.
         blades = list(range(4))
@@ -198,24 +200,24 @@ class BladeMask:
         # An offset relative to the corner is added as a horizontal shift,
         # since blades are not necessarily located at the corners of the box.
 
-        # Bottom, left blade.
-        dx = -blades[0][0][0] + self.corneroffset
-        dy = -blades[0][0][1]
+        # Top, right blade.
+        dx = self.windowsize[0] - blades[0][2][0] - self.corneroffset
+        dy = self.windowsize[1] - blades[0][2][1]
         blades[0] += np.array((dx, dy))
 
-        # Bottom, right blade.
-        dx = self.windowsize[0] - blades[1][1][0] - self.corneroffset
-        dy = -blades[1][1][1]
+        # Top, left blade.
+        dx = -blades[1][3][0] + self.corneroffset
+        dy = self.windowsize[1] - blades[1][3][1]
         blades[1] += np.array((dx, dy))
 
-        # Top, right blade.
-        dx = self.windowsize[0] - blades[2][2][0] - self.corneroffset
-        dy = self.windowsize[1] - blades[2][2][1]
+        # Bottom, left blade.
+        dx = -blades[2][0][0] + self.corneroffset
+        dy = -blades[2][0][1]
         blades[2] += np.array((dx, dy))
 
-        # Top, left blade.
-        dx = -blades[3][3][0] + self.corneroffset
-        dy = self.windowsize[1] - blades[3][3][1]
+        # Bottom, right blade.
+        dx = self.windowsize[0] - blades[3][1][0] - self.corneroffset
+        dy = -blades[3][1][1]
         blades[3] += np.array((dx, dy))
 
         return blades

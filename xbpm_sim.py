@@ -420,11 +420,21 @@ def box_values_show(axval, flux, mean, pairpositions,
 
     # Text table with calculated values at each interaction.
     fluxtext = (
-        f"{'[Flux 3 - TO]':<18}   {'[Flux 2 - TI]':>22}\n"
-        f"{flux[3]:<18.4f}        {flux[2]:>16.4f}\n\n"
-        f"{'[Flux 0 - BO]':<18}   {'[Flux 1 - BI]':>22}\n"
-        f"{flux[0]:<18.4f}        {flux[1]:>16.4f}"
+        f"{'[Flux 1 - TI]':^22}   "
+        f"{'[Flux 0 - TO]':^18}\n"
+        f"{flux[1]:^16.4f}        "
+        f"{flux[0]:^18.4f}\n\n"
+        f"{'[Flux 2 - BI]':^22}   "
+        f"{'[Flux 3 - BO]':^18}\n"
+        f"{flux[2]:^16.4f}"
+        f"{flux[3]:^18.4f}"
     )
+    # fluxtext = (
+    #     f"{'[Flux 3 - TO]':<18}   {'[Flux 2 - TI]':>22}\n"
+    #     f"{flux[3]:<18.4f}        {flux[2]:>16.4f}\n\n"
+    #     f"{'[Flux 0 - BO]':<18}   {'[Flux 1 - BI]':>22}\n"
+    #     f"{flux[0]:<18.4f}        {flux[1]:>16.4f}"
+    # )
 
     # Real and calculated positions.
     positions = (
@@ -704,9 +714,11 @@ def parameters_read(parfilename: str, distributionfile: str = None) -> tuple:
                 v1 = float(re.sub(r'[\[\,]', '', val[0]))
                 v2 = float(re.sub(r'[\]\,]', '', val[1]))
                 prm[key] = np.array([v1, v2])
-            if key in ['gains']:
-                gainstr  = re.sub(r'[\[\]]', '', val).split(',')
-                prm[key] = np.array([float(g) for g in gainstr])
+            elif key in ['gains']:
+                prm[key] = np.array([
+                    float(re.sub(r'[\[\,\]]', '', g))
+                    for g in val
+                    ])
             elif key in ['addring', 'histupdate',
                          'randomhist', 'registerflux']:
                 prm[key] = False if val[0] == 'False' else True

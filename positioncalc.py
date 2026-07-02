@@ -42,39 +42,55 @@ class BeamPosition():
     def pair_difference(self) -> tuple:
         """The position of the beam from pairwised blades."""
         norm = 1.0 / sum(self.flux)
-        ihoriz = norm * ((self.flux[1] + self.flux[2]) -
-                         (self.flux[0] + self.flux[3]))
-        ivert = norm * ((self.flux[2] + self.flux[3]) -
-                        (self.flux[0] + self.flux[1]))
+        ihoriz = norm * (
+            (self.flux[0] + self.flux[3]) -
+            (self.flux[1] + self.flux[2])
+        )
+        ivert = norm * (
+            (self.flux[0] + self.flux[1]) -
+            (self.flux[2] + self.flux[3])
+        )
         # Normalize to box size.
         self.xppos = ihoriz * 0.5 * self.windowsize[0]
-        self.yppos = ivert * 0.5 * self.windowsize[1]
+        self.yppos = ivert  * 0.5 * self.windowsize[1]
         return self.xppos, self.yppos
 
     def cross_difference(self) -> tuple:
         """The position of the beam from crossed blades."""
-        ti_bo = ((self.flux[2] - self.flux[0]) /
-                 (self.flux[2] + self.flux[0]))
-        to_bi = ((self.flux[3] - self.flux[1]) /
-                 (self.flux[3] + self.flux[1]))
-        hpos = (ti_bo - to_bi) * 0.5 * self.windowsize[0]
-        vpos = (ti_bo + to_bi) * 0.5 * self.windowsize[1]
+        to_bi = (
+            (self.flux[0] - self.flux[2]) /
+            (self.flux[0] + self.flux[2])
+             )
+        ti_bo = (
+            (self.flux[1] - self.flux[3]) /
+            (self.flux[1] + self.flux[3])
+            )
+        hpos = (to_bi - ti_bo) * 0.5 * self.windowsize[0]
+        vpos = (to_bi + ti_bo) * 0.5 * self.windowsize[1]
         return hpos, vpos
 
     #
     def neighbour_difference(self) -> list:
         """The flux difference between neighbour blades."""
-        ftop = ((self.flux[2] - self.flux[3]) /
-                (self.flux[2] + self.flux[3]))
-        fright = ((self.flux[2] - self.flux[1]) /
-                  (self.flux[1] + self.flux[2]))
-        fbottom = ((self.flux[1] - self.flux[0]) /
-                   (self.flux[0] + self.flux[1]))
-        fleft = ((self.flux[3] - self.flux[0]) /
-                 (self.flux[3] + self.flux[0]))
+        ftop = (
+            (self.flux[0] - self.flux[1]) /
+            (self.flux[0] + self.flux[1])
+            )
+        fbottom = (
+            (self.flux[3] - self.flux[2]) /
+            (self.flux[3] + self.flux[2])
+            )
+        fleft = (
+            (self.flux[1] - self.flux[2]) /
+            (self.flux[1] + self.flux[2])
+            )
+        fright = (
+            (self.flux[0] - self.flux[3]) /
+            (self.flux[0] + self.flux[3])
+            )
         return [ftop, fright, fbottom, fleft]
 
-    def _blades_intervals(self):
+    def _blades_intervals(self) -> list:
         """Find the boundaries of the surrounding box around each blade.
 
         Returns:
