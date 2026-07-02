@@ -33,8 +33,9 @@ class BeamPosition():
         for interval in self.intervals:
             nlinmin, ncolmin = int(interval[0][0]), int(interval[0][1])
             nlinmax, ncolmax = int(interval[1][0]), int(interval[1][1])
-            flux.append(np.sum(hist_img[nlinmin:nlinmax, ncolmin:ncolmax])
-                        * angle_correction)
+            flux.append(np.sum(
+                hist_img[nlinmin:nlinmax, ncolmin:ncolmax]
+                ) * angle_correction)
         # Define fluxes with gains correction.
         self.flux = np.array(flux) * self.gains
         return self.flux
@@ -42,17 +43,17 @@ class BeamPosition():
     def pair_difference(self) -> tuple:
         """The position of the beam from pairwised blades."""
         norm = 1.0 / sum(self.flux)
-        ihoriz = norm * (
+        xpos = norm * (
             (self.flux[0] + self.flux[3]) -
             (self.flux[1] + self.flux[2])
         )
-        ivert = norm * (
+        ypos = norm * (
             (self.flux[0] + self.flux[1]) -
             (self.flux[2] + self.flux[3])
         )
         # Normalize to box size.
-        self.xppos = ihoriz * 0.5 * self.windowsize[0]
-        self.yppos = ivert  * 0.5 * self.windowsize[1]
+        self.xppos = xpos * 0.5 * self.windowsize[0]
+        self.yppos = ypos  * 0.5 * self.windowsize[1]
         return self.xppos, self.yppos
 
     def cross_difference(self) -> tuple:
@@ -65,11 +66,10 @@ class BeamPosition():
             (self.flux[1] - self.flux[3]) /
             (self.flux[1] + self.flux[3])
             )
-        hpos = (to_bi - ti_bo) * 0.5 * self.windowsize[0]
-        vpos = (to_bi + ti_bo) * 0.5 * self.windowsize[1]
-        return hpos, vpos
+        xpos = (to_bi - ti_bo) * 0.5 * self.windowsize[0]
+        ypos = (to_bi + ti_bo) * 0.5 * self.windowsize[1]
+        return xpos, ypos
 
-    #
     def neighbour_difference(self) -> list:
         """The flux difference between neighbour blades."""
         ftop = (
@@ -101,9 +101,9 @@ class BeamPosition():
         for blade in self.bladescoordinates:
             xmin, xmax = np.min(blade[:, 0]), np.max(blade[:, 0])
             ncolmin = int(max(xmin / self.pixelsize, 0))
-            ncolmax = int(min(xmax / self.pixelsize, self.nbins[1] - 1))
+            ncolmax = int(min(xmax / self.pixelsize, self.nbins[1]))
             ymin, ymax = np.min(blade[:, 1]), np.max(blade[:, 1])
             nlinmin = int(max(ymin / self.pixelsize, 0))
-            nlinmax = int(min(ymax / self.pixelsize, self.nbins[0] - 1))
+            nlinmax = int(min(ymax / self.pixelsize, self.nbins[0]))
             bladesintervals.append([[nlinmin, ncolmin], [nlinmax, ncolmax]])
         return bladesintervals

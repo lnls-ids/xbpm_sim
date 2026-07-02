@@ -169,13 +169,15 @@ def standard_deviation(realx, realy, adjx, adjy, title=""):
 """Functions to solve the linear system of adjustment coefficients."""
 
 
-def chi_square(real, calc, kk, delta):
+def chi_square(real: np.ndarray, calc: np.ndarray,
+               kk: float, delta: float) -> float:
     """Chi-square estimate from data and fitted parameters."""
     norm = 1. / (real.shape[0] - 1)
     return norm * np.sum(np.square(real - kk * calc - delta))
 
 
-def correction_coefficients(real, calc, fromto=(0, 10)):
+def _correction_coefficients(real: np.ndarray, calc: np.ndarray,
+                             fromto: tuple = (0, 10)) -> tuple:
     """Calculate the coefficients to correct the positions of measured data.
 
     This function slices and reshapes 'data' to extract the central portion
@@ -201,15 +203,14 @@ def correction_coefficients(real, calc, fromto=(0, 10)):
     # Avoid infinities in weighing by adding an offset.
     offset = (wmax - wmin) / (np.max(wslice.shape))
     weight = 1. / (wslice + offset)
-    # weight = 1. / (np.sqrt(wslice) + offset)
 
     # Fit data with heavier weight at the central region.
     # weight = 1. / np.sqrt(np.abs(calcslice))
     try:
         pf = np.polyfit(calcslice, realslice, deg=1, w=weight, cov=True)
     except Exception as err:
-        weight = np.ones(len(calcslice))
         print(f" WARNING: {err}.\n Fitting weight set to 1.")
+        weight = np.ones(len(calcslice))
         pf = np.polyfit(calcslice, realslice, deg=1, w=weight, cov=True)
 
     (kk, delta), cov = pf
@@ -218,7 +219,8 @@ def correction_coefficients(real, calc, fromto=(0, 10)):
     return kk, delta, cov, chi2
 
 
-def xbpm_fit(data, fromto=(7, 14), title="XBPM_positions"):
+def xbpm_fit(data: np.ndarray, fromto: tuple = (7, 14),
+             title: str = "XBPM_positions") -> tuple:
     """Calculate the Kx and Ky coefficients to correct XBPM data and plot it.
 
     Args:
@@ -249,15 +251,15 @@ def xbpm_fit(data, fromto=(7, 14), title="XBPM_positions"):
 
     # Calculate correction coefficients and plot results.
     # Horizontal.
-    kx, deltax, covx, chi2x = correction_coefficients(real_x, calc_x,
+    kx, deltax, covx, chi2x = _correction_coefficients(real_x, calc_x,
                                                        fromto=fromto)
     print(f"\n Kx     = {kx:.6f}  ({np.sqrt(covx[0, 0]):.1e}), "
-        f" deltax = {deltax:.6f}  ({np.sqrt(covx[1, 1]):.1e}), "
-        f"\t chi2 = {chi2x:.4g}"
-        f"\n Covariance =\n{covx}")
+          f" deltax = {deltax:.6f}  ({np.sqrt(covx[1, 1]):.1e}), "
+          f"\t chi2 = {chi2x:.4g}"
+          f"\n Covariance =\n{covx}")
 
     # Vertical.
-    ky, deltay, covy, chi2y = correction_coefficients(real_y, calc_y,
+    ky, deltay, covy, chi2y = _correction_coefficients(real_y, calc_y,
                                                       fromto=fromto)
     print(f"\n Ky     = {ky:.6f}  ({np.sqrt(covy[0, 0]):.1e}), "
         f" deltay = {deltay:.6f}  ({np.sqrt(covy[1, 1]):.1e}), "
@@ -269,17 +271,14 @@ def xbpm_fit(data, fromto=(7, 14), title="XBPM_positions"):
                                                  (kx, deltax), (ky, deltay),
                                                  fromto,
                                                  title=title)
-    print("\n\n# Standard deviations (um):\n"
+    print("\n\n# Standard deviations (µm):\n"
           f"    horizontal: {stddevx * 1000:.2f}\n"
           f"    vertical:   {stddevy * 1000:.2f}\n"
           f"    overall:    {stddevall * 1000:.2f}\n")
 
 
-def data_read():
+def data_read() -> tuple:
     """Read command line options and files.
-
-    This function is intentionally thin: it delegates parsing and file
-    reading to small helpers so the logic is easier to test and maintain.
 
     Returns:
         (data, fitrange) where data is a list of FileData objects.
@@ -296,7 +295,7 @@ class FileData:
     title: str
 
 
-def parse_options(argv=None):
+def parse_options(argv= None) -> tuple:
     """Parse command line options and return (files, fitrange).
 
     Uses argparse for clearer help messages and validation. If argv is
@@ -333,7 +332,7 @@ def parse_options(argv=None):
     return files, fitrange
 
 
-def read_data_files(files):
+def read_data_files(files: list) -> list:
     """Read the provided files and build the data list.
 
     Each entry is [numpy_array, title]. Any file read error will print
@@ -359,7 +358,7 @@ def read_data_files(files):
     return data
 
 
-def flux_plot(data):
+def flux_plot(data: np.ndarray) -> None:
     """Plot data flux.
 
     Args:
@@ -367,14 +366,14 @@ def flux_plot(data):
     """
     rx = data[:, 0]
     ry = data[:, 1]
-    bo = data[:, 4]
+    to = data[:, 4]
     # bi = data[:, 5]
     # ti = data[:, 6]
     # to = data[:, 7]
 
     fig, ax = plt.subplots(2)
-    ax[0].plot(rx, bo, 'bo', label="BI vs x")
-    ax[1].plot(ry, bo, 'go-', label="BI vs y")
+    ax[0].plot(rx, to, 'bo-', label="TO vs x")
+    ax[1].plot(ry, to, 'go-', label="TO vs y")
     ax[0].set_yscale("log")
     ax[1].set_yscale("log")
     ax[0].legend()
@@ -383,18 +382,24 @@ def flux_plot(data):
     ax[1].grid()
 
 
-def main():
+def main() -> None:
     """Read data from files, plot and fit calibration for XBPM simulation."""
     data, fitrange = data_read()
 
     # Data square size, in index value.
     step = int(np.sqrt(data[0].array.shape[0]))
 
+    # DEBUG
+    # print(f" DEBUG main: array shape = {data[0].array.shape},"
+    #       f" step = {step}, fitrange = {fitrange}")
+    # DEBUG
+
     # Default value for fitting interval if not provided.
     nx = int(step / 2)
     if fitrange is None:
         fitrange = int(nx / 4)
     fromto = (nx - fitrange, nx + fitrange + 1)
+    print(f"\n ### Fitting interval set to {fromto} ")
 
     for fd in data:
         xbpm_fit(fd.array, fromto=fromto, title=fd.title)
