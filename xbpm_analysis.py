@@ -24,7 +24,11 @@ import re
 import sys
 
 
-def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
+def plot_positions(data: np.ndarray,
+                   kdx: tuple = (1, 1),
+                   kdy: tuple = (1, 1),
+                   fromto: tuple = (7, 14),
+                   title: str = "XBPM_positions") -> tuple:
     """Plot the positions calculated by the XBPM simulation."""
     # Use a slightly smaller figure and manually adjust spacing to
     # reduce large borders and gaps between axes.
@@ -68,10 +72,10 @@ def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
     adjreshsl_y = adjresh_y[fr:to, fr:to]
     #
     axcut.plot(adjreshsl_x, adjreshsl_y, 'bo-')
-    axcut.plot(rsl_x, rsl_y, 'r+-')
-    stddevx, stddevy, stddevall = standard_deviation(rsl_x, rsl_y,
-                                                     adjreshsl_x, adjreshsl_y,
-                                                     title)
+    axcut.plot(rsl_x, rsl_y, 'r+')
+    stddevx, stddevy, stddevall = standard_deviation(
+        rsl_x, rsl_y, adjreshsl_x, adjreshsl_y, title
+        )
 
     # Select a line and compare real x calculated.
     lr = int(len(rrs_x) / 2)
@@ -107,7 +111,9 @@ def plot_positions(data, kdx=(1, 1), kdy=(1, 1), fromto=(7, 14), title=""):
     return stddevx, stddevy, stddevall
 
 
-def standard_deviation(realx, realy, adjx, adjy, title=""):
+def standard_deviation(realx: np.ndarray, realy: np.ndarray,
+                       adjx: np.ndarray, adjy: np.ndarray,
+                       title: str = "") -> tuple[float, float, float]:
     """Average square distance between real and measured positions.
 
     Args:

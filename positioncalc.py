@@ -18,7 +18,7 @@ class BeamPosition():
         # self.intervals = intervals
         self.bladescoordinates = bladescoordinates
         self.windowsize = gprm['windowsize']
-        self.pixelsize  = gprm['pixelsize']
+        self.pixelsize  = gprm['virtualpixelsize']
         self.nbins      = gprm['nbins']
         self.theta      = gprm['theta']
         self.intervals  = self._blades_intervals()

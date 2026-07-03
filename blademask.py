@@ -21,19 +21,20 @@ class BladeMask:
 
     Version: 2025-08-14.
     """
-    def __init__(self, gprm):
+    def __init__(self, gprm: dict):
         """Define the main parameters of the mask."""
-        self.windowsize = gprm['windowsize']
-        self.pixelsize = gprm['pixelsize']
-        self.nbins = gprm['nbins']
-        self.corneroffset = gprm['corneroffset']
-        self.bladelength = gprm['bladelength']
-        self.bladethickness = gprm['bladethickness']
-        self.phi = self._degtorad(gprm['phi'])
+        self.prm               = gprm
+        self.windowsize        = gprm['windowsize']
+        self.pixelsize         = gprm['virtualpixelsize']
+        self.nbins             = gprm['nbins']
+        self.corneroffset      = gprm['corneroffset']
+        self.bladelength       = gprm['bladelength']
+        self.bladethickness    = gprm['bladethickness']
+        self.phi               = self._degtorad(gprm['phi'])
         self.bladescoordinates = self._blades_coordinates()
-        self.maskarray = self.mask_array()
+        self.maskarray         = self.mask_array()
 
-    def mask_array(self):
+    def mask_array(self) -> np.ndarray:
         """Create a mask to weight the intersection of pixels and blades.
 
         The mask values are the percentage of intersection of the blade with
@@ -45,7 +46,7 @@ class BladeMask:
         projected into the pixel array.
 
         Warning: the usual indexing of an array is from top to bottom, but
-        the coodrinates were chosen accordingly to the Cartesian systems,
+        the coordinates were chosen accordingly to the Cartesian systems,
         so the current indexing is reversed.
         """
         # Create mask array with zeros.
@@ -100,7 +101,8 @@ class BladeMask:
             for jj, interval in enumerate(intervals):
                 # Define the interval corresponding to current blade. Take the
                 # limits of the box, [0, windowsize[0/1]], into consideration.
-                # xA, xB = max(interval[0], 0), min(interval[1], self.windowsize)
+                # xA, xB = max(interval[0], 0),
+                #  min(interval[1], self.windowsize)
                 # # xA, xB = interval[0], interval[1]
 
                 # Horizontal range to be scanned, in pixels coordinates, not
@@ -137,7 +139,7 @@ class BladeMask:
 
         return self.mask
 
-    def _blades_coordinates(self):
+    def _blades_coordinates(self) -> list[np.ndarray]:
         """Create a list of the coordinates of the four blades.
 
         Each element of the list is an array with the coordinates of the
@@ -151,7 +153,7 @@ class BladeMask:
         upon which the x-ray is incident.
 
         Returns:
-            blades (list): each blades' corners' coordinates.
+            blades (list): each blades' corners' coordinates in mm.
         """
         # Define the blade corners. The order is counterclockwise,
         # starting from the bottom left of the blade. The initial position
@@ -222,7 +224,8 @@ class BladeMask:
 
         return blades
 
-    def _pixel_area(self, key, x0, xf, ya, yb):
+    def _pixel_area(self, key: str,
+                    x0: float, xf: float, ya: float, yb: float) -> float:
         """Wrapper function to access pixel area dictionary.
 
         The letters in keys indicate the pixel borders crossed by
@@ -246,7 +249,8 @@ class BladeMask:
         if key == 'TR':
             return 1. - 0.5 * (1 - xf) * (1 - yb)
 
-    def pixel_weight(self, nlin, ncol, bot_eq, top_eq):
+    def pixel_weight(self, nlin: int, ncol: int,
+                     bot_eq: list[float], top_eq: list[float]) -> float:
         """Calculate the area of intersection of blade over the pixel.
 
         The intersected area is the weight of the pixel to be considered.
@@ -309,7 +313,8 @@ class BladeMask:
         else:
             return area0
 
-    def _pixel_corner_weight(self, corners, blade_eqs):
+    def _pixel_corner_weight(self, corners: list[tuple[float, float]],
+                             blade_eqs: list[list[float]]) -> None:
         """Assign weights to the pixels at blade's corners."""
         for ic, corner in enumerate(corners):
             xc, yc = corner
@@ -353,11 +358,13 @@ class BladeMask:
     """Mathematical methods: linear equation, integral of a line,
     matrix rotation in 2D."""
 
-    def _linear(self, x, a, b):
+    def _linear(self, x: float, a: float, b: float) -> float:
         """Straight line equation."""
         return a * x + b
 
-    def _edge_line(self, pp, qq):
+    def _edge_line(self,
+                   pp: tuple[float, float],
+                   qq: tuple[float, float]) -> list[float]:
         """Calculate the line equation joining two points, P and Q.
 
         Args:
@@ -371,7 +378,9 @@ class BladeMask:
         b = pp[1] - a * pp[0]
         return [a, b]
 
-    def _integral_linear(self, coefficients, interval):
+    def _integral_linear(self,
+                         coefficients: tuple[float, float],
+                         interval: tuple[float, float]) -> float:
         """Integral of a linear equation.
 
         Args:
@@ -386,7 +395,7 @@ class BladeMask:
         xa, xb = interval
         return (xb - xa) * (a * (xa + xb) / 2.0 + b)
 
-    def _matrix_rotation(self, phi):
+    def _matrix_rotation(self, phi: float) -> np.ndarray:
         """Rotation matrix.
 
         Args:
@@ -399,6 +408,6 @@ class BladeMask:
         sphi = np.sin(phi)
         return np.array([[cphi, -sphi], [sphi, cphi]])
 
-    def _degtorad(self, phi):
+    def _degtorad(self, phi: float) -> float:
         """Convert from degree to radian."""
         return np.pi / 180 * phi
