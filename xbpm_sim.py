@@ -403,8 +403,7 @@ def gaussian_2d_samples(gprm: dict, idx: int) -> tuple:
 def histogram_shift(beamhist: np.ndarray,
                     newbeamcenter: np.ndarray,
                     oldbeamcenter: np.ndarray = np.array([0, 0]),
-                    pixelsize: float = 0.2,
-                    windowsize: tuple = (1.0, 1.0)) -> np.ndarray:
+                    pixelsize: float = 0.2) -> np.ndarray:
     """Just shift histogram by mean vector.
     
     Args:
@@ -424,49 +423,21 @@ def histogram_shift(beamhist: np.ndarray,
     dx, dy  = float(delta[0]), float(delta[1])
 
     # Histogram dimensions.
-    # nlin, ncol = beamhist.shape
-
-    # Work first with float values to avoid collapsing nearby centers,
-    # then convert values back to int. 
-    window_x, window_y = windowsize[0], windowsize[1]
-
-    # DEBUG
-    print("\n###\n### DEBUG histogram_shift() :"
-          f"\n pixelsize = {pixelsize}"
-          f"\n dx, dy = {dx}, {dy} (beam diff = {newbeamcenter - oldbeamcenter})"
-          f"\n window_x, window_y = {window_x}, {window_y} \n")
-    # DEBUG
+    nlin, ncol = beamhist.shape
+    px = int(np.round(dx / pixelsize))
+    py = int(np.round(dy / pixelsize))
 
     # Find the overlapping region between the original
     # and shifted histograms. b = original, n = new (shifted).
-    bh_x_min = max(0, dx)
-    bh_y_min = max(0, dy)
-    bh_x_max = min(window_x, window_x - dx)
-    bh_y_max = min(window_y, window_y - dy)
+    bh_x_min = max(0, -px)
+    bh_y_min = max(0, -py)
+    bh_x_max = min(ncol, ncol - px)
+    bh_y_max = min(nlin, nlin - py)
 
-    nh_x_min = max(0, dx)
-    nh_y_min = max(0, dy)
+    nh_x_min = max(0, px)
+    nh_y_min = max(0, py)
     nh_x_max = nh_x_min + (bh_x_max - bh_x_min)
     nh_y_max = nh_y_min + (bh_y_max - bh_y_min)
-
-    # Back to integer indexes.
-    bh_x_min = np.int64(np.ceil(bh_x_min / pixelsize))
-    bh_y_min = np.int64(np.ceil(bh_y_min / pixelsize))
-    bh_x_max = np.int64(np.ceil(bh_x_max / pixelsize))
-    bh_y_max = np.int64(np.ceil(bh_y_max / pixelsize))
-    #
-    nh_x_min = np.int64(np.ceil(nh_x_min / pixelsize))
-    nh_y_min = np.int64(np.ceil(nh_y_min / pixelsize))
-    nh_x_max = np.int64(np.ceil(nh_x_max / pixelsize))
-    nh_y_max = np.int64(np.ceil(nh_y_max / pixelsize))
-
-    # DEBUG
-    print(f"\n###\n### DEBUG histogram_shift() : beamcenter = {newbeamcenter}"
-          f"\t (oldbeamcenter = {oldbeamcenter})")
-    for limname in ["bh_x_min", "bh_x_max", "bh_y_min", "bh_y_max",
-                    "nh_x_min", "nh_x_max", "nh_y_min", "nh_y_max"]:
-        print(f"{limname} = {eval(limname)}")
-    # DEBUG
 
     # Copy the overlapping region from the original histogram
     # to the new histogram by slicing.
@@ -758,37 +729,19 @@ def sweep_make(fig: plt.Figure, beamhist: np.ndarray,
     # Set output files.
     outfile_initialize(gprm)
 
-    # DEBUG
-    print("\n###\n### DEBUG sweep_make() :\n"
-          f" beam_centers =\n {beam_centers}")
-    # DEBUG
-
     # Shift the mean of the distribution(s) to perform the sweeping.
-    beamhist = beamhist[0]
     oldbeamcenter = gprm[0]["mean"]
-    for beamcenter in beam_centers:
-
-        # DEBUG
-        print("\n###\n### DEBUG sweep_make() : "
-            f" beam center now = {beamcenter}")
-        # DEBUG
-
-        shiftedbeam = histogram_shift(beamhist,
-                                      beamcenter,
+    originalbeam  = gprm['origbeam']
+    for newbeamcenter in beam_centers:
+        shiftedbeam = histogram_shift(originalbeam,
+                                      newbeamcenter,
                                       oldbeamcenter,
-                                      pixelsize=gprm["virtualpixelsize"],
-                                      windowsize=gprm["windowsize"])
-
-        # Update the 'mean' entry in gprm.
-        # mean_update(gprm, mean, len(beamhist))
-
+                                      pixelsize=gprm["virtualpixelsize"])
 
         # Update the histograms for the new mean.
         if gprm['histupdate']:
             histogram_update(beamhist, gprm)
 
-        oldbeamcenter = beamcenter
-        beamhist      = shiftedbeam
         imgbeam       = shiftedbeam if gprm["ngauss"] == 1 else sum(beamhist)
         imshowbeam.set_data(imgbeam)
         #
@@ -799,12 +752,12 @@ def sweep_make(fig: plt.Figure, beamhist: np.ndarray,
         # Update measured data and show it.
         (fluxes, pairpositions,
          crosspositions, ineigh) = observables_calculate(imgmasked, bmp)
-        box_values_show(axval, fluxes, beamcenter, pairpositions,
+        box_values_show(axval, fluxes, newbeamcenter, pairpositions,
                         crosspositions, ineigh)
 
         # Record values.
         registerflux = fluxes if gprm['registerflux'] else None
-        measurement_record(beamcenter, pairpositions, crosspositions, gprm,
+        measurement_record(newbeamcenter, pairpositions, crosspositions, gprm,
                            fluxes=registerflux)
         fig.canvas.draw_idle()
         plt.pause(0.1)
@@ -817,14 +770,19 @@ def number_of_bins(gprm: dict) -> tuple:
 
     Args:
         gprm (dict): general parameters of the simulation.
+        interactive (bool): if True, the user controls the beam
+                            by keyboard arrows.
     """
     window_x, window_y = gprm['windowsize']
     roi_begin, roi_end = gprm['sweepinterval']
 
     # Check the smaller size between pixel size and sweep step.
     # Guarantee that the resolution of the histogram array is sufficient.
-    stepsize  = (roi_end - roi_begin) / gprm["nsweeps"]
-    pixelsize = min(stepsize, gprm["pixelsize"]) * STEP_RESOLUTION_FACTOR
+    if gprm['interactive']:
+        pixelsize = gprm["pixelsize"]
+    else:
+        stepsize  = (roi_end - roi_begin) / gprm["nsweeps"]
+        pixelsize = min(gprm["pixelsize"], stepsize) * STEP_RESOLUTION_FACTOR
 
     # Calculate the number of bins in x and y directions.
     nlin = window_y / pixelsize
@@ -833,13 +791,17 @@ def number_of_bins(gprm: dict) -> tuple:
     return np.int64(np.ceil([nlin, ncol])), pixelsize
 
 
-def parameters_read(parfilename: str, distributionfile: str = None) -> tuple:
+def parameters_read(parfilename: str,
+                    distributionfile: str = None,
+                    interactive: bool = True) -> tuple:
     """Read simulation parameters from file.
 
     Args:
         parfilename (str): parameter's file name
         distributionfile (str) : file with previously generated image.
-
+        interactive (bool) : if True, the user controls the beam
+                             by keyboard arrows.
+        
     Returns:
         prm (dict): read parameters and their respective values.
         mean (numpy array): initial gaussian beam mean;
@@ -876,13 +838,8 @@ def parameters_read(parfilename: str, distributionfile: str = None) -> tuple:
 
     # Number of histogram bins (number of pixels in image).
     # Guarantee that the resolution of the histogram array is sufficient.
+    prm['interactive'] = interactive
     prm['nbins'], prm['virtualpixelsize'] = number_of_bins(prm)
-
-    # DEBUG
-    print("\n###\n### DEBUG number_of_bins() :"
-          f"\n pixelsize (after factor) = {prm['virtualpixelsize']}"
-          f"\n nlin, ncol = {prm['nbins'][0]}, {prm['nbins'][1]}\n###\n")
-    # DEBUG
 
     # Set gains to 1 if not defined.
     if 'gains' not in prm:
@@ -960,7 +917,9 @@ def main() -> int:
     # mean (numpy array): default mean 1x2 matrix of the distribution;
     # cov (numpy array): default covariance 2x2 matrix of the distribution;
     interactive, parameterfile, distributionfile = cmd_options()
-    gprm, mean, cov = parameters_read(parameterfile, distributionfile)
+    gprm, mean, cov = parameters_read(parameterfile,
+                                      distributionfile,
+                                      interactive=interactive)
 
     # Add a dictionary of each gaussian's parameters to the general
     # parameters (gprm) dictionary.

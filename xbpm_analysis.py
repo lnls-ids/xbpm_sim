@@ -395,11 +395,6 @@ def main() -> None:
     # Data square size, in index value.
     step = int(np.sqrt(data[0].array.shape[0]))
 
-    # DEBUG
-    # print(f" DEBUG main: array shape = {data[0].array.shape},"
-    #       f" step = {step}, fitrange = {fitrange}")
-    # DEBUG
-
     # Default value for fitting interval if not provided.
     nx = int(step / 2)
     if fitrange is None:

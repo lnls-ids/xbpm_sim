@@ -101,9 +101,9 @@ class BeamPosition():
         for blade in self.bladescoordinates:
             xmin, xmax = np.min(blade[:, 0]), np.max(blade[:, 0])
             ncolmin = int(max(xmin / self.pixelsize, 0))
-            ncolmax = int(min(xmax / self.pixelsize, self.nbins[1]))
+            ncolmax = int(np.ceil(min(xmax / self.pixelsize, self.nbins[1])))
             ymin, ymax = np.min(blade[:, 1]), np.max(blade[:, 1])
             nlinmin = int(max(ymin / self.pixelsize, 0))
-            nlinmax = int(min(ymax / self.pixelsize, self.nbins[0]))
+            nlinmax = int(np.ceil(min(ymax / self.pixelsize, self.nbins[0])))
             bladesintervals.append([[nlinmin, ncolmin], [nlinmax, ncolmax]])
         return bladesintervals
