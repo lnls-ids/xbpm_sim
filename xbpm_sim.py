@@ -502,10 +502,10 @@ def box_values_show(axval: plt.Axes, flux: np.ndarray,
 
     # Real and calculated positions.
     positions = (
-        f"{'     ':10}     {'H':>12}   {'V':>14}\n"
-        f"{'Real ':<15}    {mean[0]:<12.2f}     {mean[1]:<12.2f}\n\n"
-        f"{'Pair ':<15}     {hpos:<10.2f}     {vpos:<10.2f}\n\n"
-        f"{'Cross':<15}    {hcrosspos:<10.2f}     {vcrosspos:<10.2f}\n"
+        f"{'     ':<15}  {'H  ':^15}  {'V  ':^15}\n"
+        f"{'Real ':<15}  {mean[0]:<15.6f}  {mean[1]:<15.6f}\n\n"
+        f"{'Pair ':<15}  {hpos:<15.6f}  {vpos:<15.6f}\n\n"
+        f"{'Cross':<15}  {hcrosspos:<15.6f}  {vcrosspos:<15.6f}\n"
     )
 
     # Neighbour pair positions.
@@ -617,7 +617,7 @@ def image_show(count: int,
     return imbeam, imblades
 
 
-def measurement_record(mean: np.ndarray,
+def measurement_record(beamcenter: np.ndarray,
                        pairpositions: np.ndarray,
                        crosspositions: np.ndarray,
                        gprm: dict,
@@ -625,30 +625,43 @@ def measurement_record(mean: np.ndarray,
     """Write mean, crosspositions and pairpositions results to data file.
 
     Args:
-        mean (array): current mean value of sweeping;
-        pairpositions (array): pairwise measured positions;
-        crosspositions (array): crossed-blades measured positions;
-        gprm (dict): general parameters of the simulation.
-        fluxes (list) : values of flux on the blades.
+        beamcenter (array)     : current mean value of sweeping;
+        pairpositions (array)  : pairwise measured positions;
+        crosspositions (array) : crossed-blades measured positions;
+        gprm (dict)            : general parameters of the simulation.
+        fluxes (list)          : values of flux on the blades.
     """
+    # Floating point format for output files.
+    N, M = 18, 12
+    FLPAT = f"{{:{N}.{M}f}}"
+    
+    # Output file name.
     outfilename = gprm['outfilename']
 
     # Write out crossed-blades position measurements.
     crossfile = f"{outfilename}-cross-00.dat"
     with open(crossfile, "a") as cf:
-        dataline = (f"{mean[0]:.6f} {mean[1]:.6f}   "
-                    f"{crosspositions[0]:.6f} {crosspositions[1]:.6f}")
+        dataline = (f"{FLPAT.format(beamcenter[0])} "
+                    f"{FLPAT.format(beamcenter[1])}   "
+                    f"{FLPAT.format(crosspositions[0])} " 
+                    f"{FLPAT.format(crosspositions[1])}")
         if fluxes is not None:
-            dataline += "  " + " ".join([f"{flux:.6f}" for flux in fluxes])
+            dataline += "  " + " ".join(
+                [FLPAT.format(flux) for flux in fluxes]
+                )
         cf.write(dataline + "\n")
 
     # Write out paired-blades position measurements.
     pairfile = f"{outfilename}-pair-00.dat"
     with open(pairfile, "a") as pf:
-        dataline = (f"{mean[0]:.6f} {mean[1]:.6f}  "
-                    f"{pairpositions[0]:.6f} {pairpositions[1]:.6f}")
+        dataline = (f"{FLPAT.format(beamcenter[0])} "
+                    f"{FLPAT.format(beamcenter[1])}  "
+                    f"{FLPAT.format(pairpositions[0])} "
+                    f"{FLPAT.format(pairpositions[1])}")
         if fluxes is not None:
-            dataline += "  " + "   ".join([f"{flux:.6f}" for flux in fluxes])
+            dataline += "  " + "   ".join(
+                [FLPAT.format(flux) for flux in fluxes]
+                )
         pf.write(dataline + "\n")
 
 
@@ -757,8 +770,9 @@ def sweep_make(fig: plt.Figure, beamhist: np.ndarray,
 
         # Record values.
         registerflux = fluxes if gprm['registerflux'] else None
-        measurement_record(newbeamcenter, pairpositions, crosspositions, gprm,
-                           fluxes=registerflux)
+        measurement_record(newbeamcenter,
+                           pairpositions, crosspositions,
+                           gprm, fluxes=registerflux)
         fig.canvas.draw_idle()
         plt.pause(0.1)
 
