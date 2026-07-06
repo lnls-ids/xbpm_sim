@@ -73,7 +73,7 @@ registerflux (True/False) : record the fluxes on the blades and write them to
 
 # from networkx import bellman_ford_path_length
 import numpy as np
-from scipy.ndimage import zoom
+from scipy.ndimage import zoom, shift
 import matplotlib.pyplot as plt
 import random as rnd
 
@@ -415,36 +415,21 @@ def histogram_shift(beamhist: np.ndarray,
     Returns:
         newhist (numpy array): the shifted histogram.
     """
-    # New histogram skeleton.
-    newhist = np.zeros_like(beamhist)
-
-    # Displacement.
+    # Calculate displacement.
     delta = newbeamcenter - oldbeamcenter
     dx, dy  = float(delta[0]), float(delta[1])
 
     # Histogram dimensions.
-    nlin, ncol = beamhist.shape
-    px = int(np.round(dx / pixelsize))
-    py = int(np.round(dy / pixelsize))
+    dx_px = dx / pixelsize
+    dy_px = dy / pixelsize
 
-    # Find the overlapping region between the original
-    # and shifted histograms. b = original, n = new (shifted).
-    bh_x_min = max(0, -px)
-    bh_y_min = max(0, -py)
-    bh_x_max = min(ncol, ncol - px)
-    bh_y_max = min(nlin, nlin - py)
-
-    nh_x_min = max(0, px)
-    nh_y_min = max(0, py)
-    nh_x_max = nh_x_min + (bh_x_max - bh_x_min)
-    nh_y_max = nh_y_min + (bh_y_max - bh_y_min)
-
-    # Copy the overlapping region from the original histogram
-    # to the new histogram by slicing.
-    newhist[nh_y_min:nh_y_max,
-            nh_x_min:nh_x_max] = beamhist[bh_y_min:bh_y_max,
-                                          bh_x_min:bh_x_max]
-    
+    # Make a subpixel shift of the histogram by interpolation.
+    # The order=1 means linear interpolation. The mode='constant' means
+    # that the values outside the boundaries of the input are set to cval.
+    # The prefilter=False means that the input is not prefiltered before
+    # interpolation (not necessary for first order interpolation).
+    newhist = shift(beamhist, shift=(dy_px, dx_px), order=1,
+                    mode='constant', cval=0.0, prefilter=False)
     return newhist
 
 
