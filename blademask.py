@@ -313,10 +313,30 @@ class BladeMask:
         else:
             return area0
 
+    def _shoelace_area(self, corners: list[tuple[float, float]]) -> float:
+        """Calculate the area of a polygon using the shoelace formula.
+
+        Args:
+            corners (list): list of tuples with the coordinates of the
+                polygon's corners.
+
+        Returns:
+            area (float): area of the polygon.
+        """
+        n = len(corners)
+        area = 0.0
+        for i in range(n):
+            j = (i + 1) % n
+            area += corners[i][0] * corners[j][1]
+            area -= corners[j][0] * corners[i][1]
+        area = abs(area) / 2.0
+        return area
+
     def _pixel_corner_weight(self, corners: list[tuple[float, float]],
                              blade_eqs: list[list[float]]) -> None:
         """Assign weights to the pixels at blade's corners."""
-        for ic, corner in enumerate(corners):
+        lins, cols = self.nbins
+        for corner in corners:
             xc, yc = corner
 
             # Skip if corner lies outside the box array.
@@ -325,35 +345,33 @@ class BladeMask:
                 continue
 
             # Identify pixel (in array) coordinates. It must be inbounds.
-            nx = min(int(xc / self.pixelsize), self.nbins[0] - 1)
-            ny = max(int(yc / self.pixelsize), self.nbins[1] - 1)
+            ny = min(int(yc / self.pixelsize), lins - 1)
+            nx = min(int(xc / self.pixelsize), cols - 1)
+            # Take care of corners beyond borders.
             if nx < 0:
                 nx = 0
             if ny < 0:
                 ny = 0
-            xa, y0 = nx * self.pixelsize, ny * self.pixelsize
-            xb, yf = xa + self.pixelsize, y0 + self.pixelsize
 
-            # Calculate crossing point.
-            topeq, boteq = blade_eqs[(ic - 1) % 4], blade_eqs[ic]
-            xcross = (topeq[1] - boteq[1]) / (boteq[0] - topeq[0])
-            ycross = self._linear(xcross, *topeq)
+            # Get back the pixel's corners coordinates.
+            # Intervals are: H: [a, b] x V: [y0, yf].
+            xa = nx * self.pixelsize
+            xb = xa + self.pixelsize
+            y0 = ny * self.pixelsize
+            yf = y0 + self.pixelsize
 
-            # Next step, TO BE DONE: find the intersection area.
-            # Idea: besides the crossing point coordinates (above), find the
-            # side of the blade which intersects the pixel, calculate the
-            # height of the triangle formed by the this blade corner
-            # (crossing point) and the corresponding pixel edge intercepted
-            # by the blade, calculate the area of the triangle and discount
-            # the other two minor triangles outside the pixel.
+            # Define the polygon corners formed by the pixel's corners
+            # and the blade's corner inside it. The present definition
+            # is just an approximation, since the blade's intersection
+            # with the pixel borders should be used.
+            pixel_corners = [(xa, y0), (xb, y0), (xb, yf), (xa, yf)]
+            polygon_corners = pixel_corners + [corner]
 
-            # Temporary dummy line to avoid warnings from CodeVS.
-            ycross += xb + yf
-
-            # WARNING: Temporary!
-            self.mask[nx, self.nbins[1] - 1 - ny] = 0.25
-
-        return
+            # Calculate intersection area of the pixel with
+            # the blade's corner by shoelace formula.
+            self.mask[ny, nx] = (
+                self._shoelace_area(polygon_corners) / (self.pixelsize ** 2)
+                )
 
     """Mathematical methods: linear equation, integral of a line,
     matrix rotation in 2D."""
